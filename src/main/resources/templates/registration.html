@@ -72,7 +72,7 @@
         <h1>Registration Form</h1>
         <div th:if="${param.success}">
             <div class="alert alert-info">
-                Registration successful !!!
+                Registration successful!!!
             </div>
         </div>
         <form method="post" role="form" th:action="@{/registration}" th:object="${user}">
@@ -93,7 +93,7 @@
             </div>
             <div class="mb-3">
                 <button class="btn btn-primary mb-3" type="submit">Register</button>
-                <a class="btn btn-secondary mb-3" th:href="@{/login}">Log In</a>
+                <a class="btn btn-secondary mb-3" th:href="@{/login}">Login</a>
             </div>
         </form>
     </div>
