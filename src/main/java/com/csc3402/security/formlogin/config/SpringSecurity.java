@@ -34,10 +34,15 @@ public class SpringSecurity {
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )
-                .logout((logout)->logout.permitAll())
-                .exceptionHandling((exceptionHandling)->exceptionHandling.accessDeniedPage("/access-denied"))
-                .csrf((csrf)->csrf.ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/h2-console**")))
-                .headers((headers)->headers.disable());
+                .logout((logout) -> logout.permitAll())
+                .exceptionHandling((exceptionHandling) -> exceptionHandling.accessDeniedPage("/access-denied"))
+                .csrf((csrf) -> csrf
+                        .ignoringRequestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**"))
+                )
+                .headers((headers) -> headers
+                        .frameOptions((frameOptions) -> frameOptions.disable())
+                );
+
         return http.build();
     }
 }
