@@ -1,15 +1,17 @@
 package com.csc3402.security.formlogin.controller;
 
 import com.csc3402.security.formlogin.model.HealthData;
-
+import com.csc3402.security.formlogin.model.Patient;
 import com.csc3402.security.formlogin.service.HealthDataService;
-
 import com.csc3402.security.formlogin.service.PatientService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
 
 
 @Controller
@@ -23,22 +25,17 @@ public class HealthMonitoringController {
         this.healthDataService = healthDataService;
         this.patientService = patientService;
     }
-    @ResponseBody
-    @GetMapping("/admin")
-    public String admin() {
-        return " Admin Page";
-    }
 
     @GetMapping("/home")
     public String home() {
         return "index";
     }
 
-    @GetMapping("list")
+    /*@GetMapping("list")
     public String showAllDataForm(Model model) {
         model.addAttribute("healthDatas", healthDataService.listAllDatas());
         return "list-data";
-    }
+    }**/
 
     @GetMapping("signup")
     public String showAddNewDataForm(HealthData healthData, Model model){
@@ -46,17 +43,37 @@ public class HealthMonitoringController {
         return "add-data";
     }
 
-    @PostMapping("add")
+    @PostMapping("/add")
     public String addData(@Valid HealthData healthData, BindingResult result, Model model) {
         if (result.hasErrors()) {
+            model.addAttribute("patients", patientService.listAllPatients());
             return "add-data";
         }
 
+        // Ensure the patient is set and valid
+        if (healthData.getPatient() == null || healthData.getPatient().getPatientId() == null) {
+            result.rejectValue("patient", "error.healthData", "Patient is required");
+            model.addAttribute("patients", patientService.listAllPatients());
+            return "add-data";
+        }
+
+        Integer patientId = healthData.getPatient().getPatientId();
+        if (!patientService.findPatientById(patientId).isPresent()) {
+            result.rejectValue("patient", "error.healthData", "Invalid or missing patient ID");
+            model.addAttribute("patients", patientService.listAllPatients());
+            return "add-data";
+        }
+
+        // Save the new health data
         healthDataService.addNewData(healthData);
-        return "redirect:list";
+
+        // Redirect to the view-data page
+        return "redirect:/healthDatas/view/" + patientId;
     }
 
-    // UPDATE STAFF
+
+
+    // UPDATE DATA
     @GetMapping("update")
     public String showUpdateMainForm(Model model) {
         model.addAttribute("healthDatas", healthDataService.listAllDatas());
@@ -66,21 +83,49 @@ public class HealthMonitoringController {
     @GetMapping("edit/{id}")
     public String showUpdateForm(@PathVariable("id") long id, Model model) {
         HealthData healthData = healthDataService.findHealthDataById((int) id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid staff Id:" + id));
+                .orElseThrow(() -> new IllegalArgumentException("Invalid data Id:" + id));
         model.addAttribute("healthData", healthData);
         model.addAttribute("patients", patientService.listAllPatients());
         return "update-data";
     }
 
-    @PostMapping("update/{id}")
-    public String updateData(@PathVariable("id") long id, @Valid HealthData healthData, BindingResult result, Model model) {
+    @PostMapping("/update/{id}")
+    public String updateData(@PathVariable("id") long id,
+                             @Valid HealthData healthData,
+                             BindingResult result,
+                             Model model) {
         if (result.hasErrors()) {
             healthData.setHealthDataId((int) id);
-            return "index";
+            model.addAttribute("patients", patientService.listAllPatients());
+            return "update-data"; // Return to update form with validation errors
         }
-        healthDataService.updateData(healthData);
-        model.addAttribute("healthDatas", healthDataService.listAllDatas());
-        return "list-data";
+
+        // Fetch existing health data to update
+        HealthData existingHealthData = healthDataService.findHealthDataById((int) id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid data Id:" + id));
+
+        // Preserve the patient ID from the existing data
+        healthData.setPatient(existingHealthData.getPatient());
+
+        // Update the health data fields
+        existingHealthData.setTimestamp(healthData.getTimestamp());
+        existingHealthData.setTemperature(healthData.getTemperature());
+        existingHealthData.setBMI(healthData.getBMI());
+        existingHealthData.setWeight(healthData.getWeight());
+        existingHealthData.setHeartRate(healthData.getHeartRate());
+        existingHealthData.setSystolic(healthData.getSystolic());
+        existingHealthData.setDiastolic(healthData.getDiastolic());
+        existingHealthData.setGlucoseLevel(healthData.getGlucoseLevel());
+        existingHealthData.setLDL(healthData.getLDL());
+        existingHealthData.setHDL(healthData.getHDL());
+        existingHealthData.setTriglycerides(healthData.getTriglycerides());
+        existingHealthData.setTotal(healthData.getTotal());
+
+        // Save the updated health data
+        healthDataService.updateData(existingHealthData);
+
+        // Redirect to the view-data page or list-data page after successful update
+        return "redirect:/healthDatas/view/" + healthData.getPatient().getPatientId();
     }
 
     @GetMapping("delete")
@@ -90,13 +135,43 @@ public class HealthMonitoringController {
     }
 
     @GetMapping("delete/{id}")
-    public String deleteStaff(@PathVariable("id") long id, Model model) {
-        HealthData healthData = healthDataService.findHealthDataById((int) id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid staff Id:" + id));
+    public String deleteData(@PathVariable("id") int healthDataId, @RequestParam("patientId") long patientId) {
+        HealthData healthData = healthDataService.findHealthDataById((healthDataId))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid data Id:" + healthDataId));
+
         healthDataService.deleteData(healthData);
-        model.addAttribute("healthDatas", healthDataService.listAllDatas());
-        return "list-data";
+        System.out.println("Deleted health data with id: " + healthDataId);
+
+        //model.addAttribute("healthDatas", healthDataService.listAllDatas());
+        // Optionally, you can redirect to the list-data page after deletion
+        return "redirect:/healthDatas/view/" + patientId;
     }
 
 
+    @GetMapping("view/{id}")
+    public String viewPatientHealthData(@PathVariable("id") int patientId, Model model) {
+        // Fetch patient health data
+        List<HealthData> healthDatas = healthDataService.findHealthDataByPatientId(patientId);
+
+        // Fetch patient details
+        Optional<Patient> patientOptional = patientService.findPatientById(patientId);
+        if (patientOptional.isPresent()) {
+            Patient patient = patientOptional.get();
+            model.addAttribute("patient", patient);
+        } else {
+            // Handle the case where the patient is not found
+            model.addAttribute("patient", null);
+            model.addAttribute("error", "Patient not found");
+        }
+
+        // Add health data to model
+        model.addAttribute("healthDatas", healthDatas);
+
+        return "view-data";
+    }
+    @GetMapping("view")
+    public String showAllDataForm(Model model) {
+        model.addAttribute("patients", patientService.listAllPatients());
+        return "list-data";
+    }
 }

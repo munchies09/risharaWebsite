@@ -48,7 +48,7 @@ public class HealthData {
     @Column(name = "total")
     private double total;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_Id")
     private Patient patient;
 
