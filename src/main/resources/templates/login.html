@@ -17,8 +17,7 @@
             width: 500px;
             padding-top: 30px;
             height: 100vh;
-            background: url('/Doc/Images/rishara-logo.png') no-repeat center center;
-            background-size: cover;
+
         }
         .login-form-container {
             width: 900px;
@@ -62,7 +61,8 @@
     <title>Login</title>
 </head>
 <body>
-<div class="container-fluid login-container">
+    <div class="container-fluid login-container" style="background: url('/Doc/Images/rishara-logo.png') no-repeat center center; background-size: cover;">
+
     <div class="login-form-container">
         <h1>Login Form</h1>
         <div th:if="${param.error}">

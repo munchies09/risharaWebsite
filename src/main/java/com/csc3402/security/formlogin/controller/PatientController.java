@@ -26,6 +26,7 @@ public class PatientController {
         return "index";
     }
 
+
     @GetMapping("list")
     public String showAllPatientForm(Model model) {
         model.addAttribute("patients", patientService.listAllPatients());

@@ -26,10 +26,12 @@ public class HealthMonitoringController {
         this.patientService = patientService;
     }
 
+
     @GetMapping("/home")
     public String home() {
         return "index";
     }
+
 
     /*@GetMapping("list")
     public String showAllDataForm(Model model) {
