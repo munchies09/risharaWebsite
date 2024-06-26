@@ -1,5 +1,5 @@
 INSERT INTO users(email, name, password) VALUES
-    ('admin@gmail.com','admin','$2a$12$JGriZzgFwZNEeuIzFcocjug9wb0/G0EJ1nco27FZoCvVLmfpfiiWe');
+    ('rishara_hospital@moh.gov.my','admin','$2a$12$JGriZzgFwZNEeuIzFcocjug9wb0/G0EJ1nco27FZoCvVLmfpfiiWe');
 INSERT INTO users(email, name, password) VALUES
     ('test@gmail.com','John','$2a$12$F2QRPx07EsQTswGmyxB4sOw7RLCnIDqux/LWhO5vfegs42OS2LE.C');
 INSERT INTO users(email, name, password) VALUES
